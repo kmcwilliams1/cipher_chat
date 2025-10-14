@@ -1,10 +1,55 @@
-# Getting Started with Create React App
+# CIPHER_CHAT
+### KCCA Security
 
-This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
+-------------------
 
-## Available Scripts
+## Contents
+A. Project Overview </br>
+B. Current Problems and Proposed Solutions</br>
+C. Requirements </br>
+D Specifications
 
-In the project directory, you can run:
+
+------------
+
+## A. Project Overview </br>
+Cipher_Chat is an encrypted messaging application designed to provide users with a secure, private,
+and reliable platform for communication. The application leverages modern cryptographic protocols
+to ensure that all messages, files, and voice attachments remain end-to-end encrypted, with no
+plaintext ever exposed to servers or third parties. </br></br>
+Cipher_Chat will feature multi-device support (Web, Desktop, and Mobile) with a clean, intuitive
+user experience. The app integrates multi-factor authentication (MFA) for enhanced account
+security and introduces an optional blockchain-based identity verification system to help users
+prove key ownership and prevent impersonation attempts.
+Inspired by secure messaging leaders, Cipher_Chat combines proven protocols with a modern
+interface and usability enhancements to set it apart from the competition.
+
+-----------
+## B. Current Problems and Proposed Solutions
+<b>Problem 1: Lack of trust in centralized messaging platforms</br></b>
+Many mainstream messaging apps (e.g., Facebook Messenger, WhatsApp) are owned by
+large corporations that may collect metadata, access backups, or be compelled to hand over user
+information. This undermines true privacy. Cipher_Chat aims to improve upon this design by
+having decentralized servers that store only encrypted information. This way, no one has access
+to your chats except you.
+
+<b>Problem 2: Metadata Protection</br></b>
+Even when content is encrypted, metadata (timestamps, who messaged who, message size)
+can reveal a lot about a conversation. Cipher_Chat can reduce amount of data discoverable in
+metadata through techniques such as mix networks, message padding, or routing obfuscation to
+reduce metadata leakage.
+
+<b>Problem 3: User Action Tracking</br></b>
+Between metadata tracking and centralized servers, it can be easy for authority figures to
+track a user’s actions. Anonymous “Ephemeral Identities” allow users to generate temporary,
+unlinkable IDs for sensitive conversations. This eliminates the possibility of outside forces
+listening in
+
+
+
+-----------
+
+
 
 ### `npm start`
 
@@ -14,35 +59,3 @@ Open [http://localhost:3000](http://localhost:3000) to view it in the browser.
 The page will reload if you make edits.\
 You will also see any lint errors in the console.
 
-### `npm test`
-
-Launches the test runner in the interactive watch mode.\
-See the section about [running tests](https://facebook.github.io/create-react-app/docs/running-tests) for more information.
-
-### `npm run build`
-
-Builds the app for production to the `build` folder.\
-It correctly bundles React in production mode and optimizes the build for the best performance.
-
-The build is minified and the filenames include the hashes.\
-Your app is ready to be deployed!
-
-See the section about [deployment](https://facebook.github.io/create-react-app/docs/deployment) for more information.
-
-### `npm run eject`
-
-**Note: this is a one-way operation. Once you `eject`, you can’t go back!**
-
-If you aren’t satisfied with the build tool and configuration choices, you can `eject` at any time. This command will remove the single build dependency from your project.
-
-Instead, it will copy all the configuration files and the transitive dependencies (webpack, Babel, ESLint, etc) right into your project so you have full control over them. All of the commands except `eject` will still work, but they will point to the copied scripts so you can tweak them. At this point you’re on your own.
-
-You don’t have to ever use `eject`. The curated feature set is suitable for small and middle deployments, and you shouldn’t feel obligated to use this feature. However we understand that this tool wouldn’t be useful if you couldn’t customize it when you are ready for it.
-
-
-
-## Learn More
-
-You can learn more in the [Create React App documentation](https://facebook.github.io/create-react-app/docs/getting-started).
-
-To learn React, check out the [React documentation](https://reactjs.org/).
