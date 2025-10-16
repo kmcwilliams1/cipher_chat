@@ -1,24 +1,63 @@
-import { useNavigate } from 'react-router-dom';
+// File: src/pages/LoginSignup.tsx
 import React, { useState } from 'react';
+import { beginWebAuthnRegister, finishWebAuthnRegister, beginWebAuthnLogin, finishWebAuthnLogin } from '../services/auth';
+import { putBlob, encryptBlob } from '../lib/storage';
 import '../CSS/LoginSignup.css';
+
 
 const SocialButton: React.FC<{ label: string; href?: string; children: React.ReactNode }> = ({ label, href = '#', children }) => (
     <a className="social-btn" href={href} aria-label={label} onClick={(e) => e.preventDefault()}>
         {children}
     </a>
-);
-
+)
 const LoginSignup: React.FC = () => {
-    const [showRegister, setShowRegister] = useState(false);
+    const [isRegister, setIsRegister] = useState(false);
+    const [email, setEmail] = useState('');
+    const [password, setPassword] = useState(''); // used for local backup encryption only (not server plaintext)
+    const [status, setStatus] = useState<string | null>(null);
+
+    async function handleRegister(e: React.FormEvent) {
+        e.preventDefault();
+        try {
+            setStatus('starting WebAuthn register...');
+            const options = await beginWebAuthnRegister(email);
+            // convert base64 fields to ArrayBuffers as needed here (server should send suitable structure)
+            // navigator.credentials.create expects ArrayBuffers in specific places
+            // For a minimal demo, assume server returns a ready-to-use PublicKeyCredentialCreationOptions
+            const cred = (await navigator.credentials.create({ publicKey: options })) as PublicKeyCredential;
+            await finishWebAuthnRegister(cred);
+            // create local key bundle (placeholder): store encrypted empty bundle with password
+            const bundle = new Uint8Array([1, 2, 3]); // replace with real key export
+            const encrypted = await encryptBlob(password || 'temporary-pass', bundle);
+            await putBlob('keybundle:' + email, encrypted);
+            setStatus('registered and saved bundle locally');
+        } catch (err: any) {
+            setStatus('register error: ' + (err.message || String(err)));
+        }
+    }
+
+    async function handleLogin(e: React.FormEvent) {
+        e.preventDefault();
+        try {
+            setStatus('starting WebAuthn login...');
+            const options = await beginWebAuthnLogin(email);
+            const cred = (await navigator.credentials.get({ publicKey: options })) as PublicKeyCredential;
+            await finishWebAuthnLogin(cred);
+            setStatus('login successful');
+            // fetch encrypted keybundle and decrypt in next step (not shown)
+        } catch (err: any) {
+            setStatus('login error: ' + (err.message || String(err)));
+        }
+    }
 
     return (
-        <div className={`home-container ${showRegister ? 'bg-image' : ''}`} style={showRegister ? { backgroundImage: "url('https://mdbcdn.b-cdn.net/img/Photos/new-templates/search-box/img4.webp')" } : {}}>
-            {showRegister && <div className="mask gradient-custom-3" />}
+        <div className={`home-container ${isRegister ? 'bg-image' : ''}`} style={isRegister ? { backgroundImage: "url('https://mdbcdn.b-cdn.net/img/Photos/new-templates/search-box/img4.webp')" } : {}}>
+            {isRegister && <div className="mask gradient-custom-3" />}
             <form
-                className={`auth-card ${showRegister ? 'register' : ''}`}
+                className={`auth-card ${isRegister ? 'register' : ''}`}
                 onSubmit={(e) => e.preventDefault()}
             >
-                {showRegister ? (
+                {isRegister ? (
                     <>
                         <h2 className="auth-title">Create an account</h2>
 
@@ -52,7 +91,7 @@ const LoginSignup: React.FC = () => {
                         <button className="btn primary gradient-custom-4" type="submit">Register</button>
 
                         <div className="text-center">
-                            <p className="muted">Already a member? <a className="link" href="#!" onClick={(e) => { e.preventDefault(); setShowRegister(false); }}>Sign in</a></p>
+                            <p className="muted">Already a member? <a className="link" href="#!" onClick={(e) => { e.preventDefault(); setIsRegister(false); }}>Sign in</a></p>
                         </div>
                     </>
                 ) : (
@@ -74,13 +113,13 @@ const LoginSignup: React.FC = () => {
                                 <input type="checkbox" id="remember" />
                                 <span>Remember me</span>
                             </label>
-                            <a className="link" href="#!" onClick={(e) => { e.preventDefault(); setShowRegister(true); }}>Forgot password?</a>
+                            <a className="link" href="#!" onClick={(e) => { e.preventDefault(); setIsRegister(true); }}>Forgot password?</a>
                         </div>
 
                         <button className="btn primary" type="submit">Sign in</button>
 
                         <div className="text-center">
-                            <p className="muted">Not a member? <a className="link" href="#!" onClick={(e) => { e.preventDefault(); setShowRegister(true); }}>Register</a></p>
+                            <p className="muted">Not a member? <a className="link" href="#!" onClick={(e) => { e.preventDefault(); setIsRegister(true); }}>Register</a></p>
                             <p className="muted">or sign up with:</p>
 
                             <div className="social-row" aria-hidden={false}>
