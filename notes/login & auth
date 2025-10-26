@@ -1,0 +1,111 @@
+Databases (high level)
+Local storage (client): authoritative plaintext store lives on the user device only. Use IndexedDB (web) and SQLite/LevelDB (desktop) for message cache, key material (encrypted), UI state, and local search indexes.
+Remote storage (servers): store only encrypted, content-addressed blobs (message envelopes, attachments, encrypted prekeys). No plaintext. Use append-only logs or object stores (S3, IPFS) that hold ciphertexts and opaque routing tokens.
+Sync/replication: clients push/pull encrypted blobs. Conflict resolution for non-linear state uses CRDTs for presence/metadata, while message delivery is append-only (ordered receipts).
+Indexing/search: if server side search is needed, use searchable symmetric encryption, blind indexes, or client-side search only. Avoid raw server indexes that reveal social graph.
+What “decentralized servers” means for this project
+Federation model (recommended for Phase 2): many independent nodes (user-run or hosted by different operators) speak the same protocol and replicate encrypted blobs; no single corporate owner. Example: Matrix-style federation or libp2p-based peers.
+Peer-to-peer overlay: clients and relay nodes store/pin encrypted content in a DHT or IPFS network. Use pinning services / relay incentivization for availability.
+Hybrid: federated control plane for discovery/presence + p2p content store for payloads.
+Key property: servers/peers are untrusted storage/transport only — they cannot decrypt messages or reconstruct identities from stored plaintext.
+Usernames, passwords, and authentication
+Avoid server-side plaintext passwords. Prefer passwordless first (WebAuthn / FIDO2) for onboarding and day-to-day auth.
+For password login: use a PAKE or asymmetric password protocol (OPAQUE / OPRF) so server never learns raw password; server stores a verifier instead.
+Device binding: combine OPAQUE with WebAuthn to provision device-bound keys. Private keys live on device; server stores only public keys and encrypted prekeys.
+Decentralized identity: support DIDs (W3C) and verifiable credentials for optional public anchors. Authentication then becomes proof-of-control of DID keypairs.
+Session tokens: issue short-lived capability tokens with proof-of-possession. Do not rely on long-lived bearer tokens that leak when intercepted.
+How credential storage and recovery work in a decentralized environment
+Local key store: encrypt private key material with a user passphrase + platform KMS (WebCrypto, OS keychain). Store encrypted bundle in local DB.
+Encrypted backups: clients can upload encrypted key bundles to chosen nodes; bundles are encrypted with a strong passphrase or via threshold encryption.
+Multi-device sync: use MLS or encrypted device group keys. Clients upload encrypted prekeys to replicated storage; new device performs an authenticated bootstrap (WebAuthn, OPAQUE, or social recovery).
+Recovery options:
+Social recovery: split a recovery key with Shamir; store shards with trusted contacts or devices.
+Threshold KMS: require k-of-n operators to release a recovery blob without any single operator learning the secret.
+Backup passphrase: user stores an encrypted backup key protected by a strong passphrase (OPAQUE can help during rekey).
+Important: design recovery flows to minimize linkability (avoid posting recovery artifacts to a single operated server unencrypted).
+Authentication flows (examples)
+Passwordless (recommended default):
+Register: create WebAuthn credential, publish public key to chosen node(s) (signed DID doc optionally).
+Login: WebAuthn assertion proves possession; node returns encrypted prekeys / mailbox pointers.
+Password + PAKE (fallback):
+Register: client runs OPAQUE with server; server stores OPRF/verifier.
+Login: OPAQUE completes, both sides derive session key; server cannot learn password.
+DID-based:
+User holds DID keypair; register DID document on chosen anchor(s).
+Authenticate by signing a challenge; servers validate against DID doc published on federated nodes or blockchain anchor.
+Metadata, indexes, and minimal exposure
+Servers only store fixed-size envelopes and opaque routing tokens. Keep timestamps and presence local or obfuscated (batching, time windows).
+Contact discovery uses PSI or hashed rotating identifiers, not raw username lists.
+Blind indexes or SSE for limited server-side queries; prefer client-side search when possible.
+Add padding/fragmentation to reduce size leakage.
+Practical stack / libraries (fits the repo tech)
+Networking: libp2p, WebRTC for peer connections, optional Tor integration.
+Content store / DB: IPFS/OrbitDB or custom encrypted S3 + blind indexes for federated nodes.
+Client storage: IndexedDB (browser), SQLite/LevelDB (desktop/Electron).
+Crypto: OPAQUE / libsodium / WebCrypto for PEKE/AEAD; X25519/Ed25519, X3DH + Double Ratchet, MLS for groups.
+Auth: WebAuthn for device keys; OPAQUE for password flows; DID libraries for decentralized identity.
+Tradeoffs and operational notes
+Availability vs privacy: pure p2p increases fragility; federation with pinning or mixed relays improves availability.
+Latency vs anonymity: mixnets/batching add latency. Expose presets (*Low latency*, *Balanced*, *High privacy*).
+Moderation and abuse: federation complicates takedowns. Use rate-limiting, community moderation and privacy-preserving reputation proofs.
+Complexity: OPAQUE, MLS, threshold crypto add implementation surface — rely on audited libraries and phased rollout.
+Concise implementation path
+Phase 1: local DB (IndexedDB / SQLite), server encrypted blob store, OPAQUE + WebAuthn bootstrap, prekeys upload.
+Phase 2: federation via libp2p / federated API, blind indexed discovery, encrypted backups + social recovery.
+Phase 3: integrate mixnet/onion routing, MLS for groups, anonymous credentials and full ephemeral identity flows.
+
+
+Start small and iterative. Implement a minimal, safe client-first auth flow, local encrypted storage, and API stubs you can replace with privacy-preserving protocols later (OPAQUE, WebAuthn + DID, prekey upload, etc.). Below are concrete first steps and three starter files to get going.
+Quick plan (first milestones)
+Add deps: idb, tweetnacl (or libsodium-wrappers), axios or use fetch, optionally libp2p later.
+Implement local secure storage (encrypted bundles, messages) using IndexedDB.
+Implement auth client wrappers for WebAuthn + PAKE/OPAQUE placeholders and server endpoints.
+Wire Signup to controlled inputs and call the auth service; persist encrypted keys locally.
+Add server stubs: /api/auth/webauthn/register/begin, /api/auth/webauthn/register/complete, /api/auth/opaque/*, /api/prekeys/upload.
+
+Next steps after bootstrapping
+Replace placeholder key bundle with real key generation (X25519 / Ed25519 via tweetnacl or libsodium).
+Implement prekey upload, prekey rotation, and prekey retrieval.
+Add OPAQUE/PAKE server and private contact discovery (PSI) for metadata minimization.
+Add federation/p2p layer when Phase 2 ready.
+
+High-level flow (user action → storage → server)
+User interacts with UI in src/pages/Signup.tsx. The component collects email/password (or starts WebAuthn flows) and calls the auth layer.
+src/services/auth.ts implements client-side auth flows (WebAuthn placeholders, OPAQUE placeholders, calls to server endpoints). It handles challenge exchange and prepares credential/assertion data.
+After successful registration/login, the client builds a local key bundle (private keys, prekeys, metadata), encrypts it with a passphrase or device-bound secret, and writes the encrypted blob into IndexedDB via src/lib/storage.ts.
+The server endpoints (stubs) receive WebAuthn/OPAQUE exchanges and store only verifiers/public credentials and encrypted prekeys. Servers never receive plaintext private keys.
+Expected developer outcome: registration shows success in UI; IndexedDB contains keybundle:<email>; server has a public credential record and at least one uploaded prekey.
+Purpose of key files
+src/pages/Signup.tsx — UI layer. Purpose: collect input, start register/login flows, show status messages. Expected outcome: triggers auth flows and local persistence steps.
+src/services/auth.ts — integration layer. Purpose: call server endpoints, prepare and normalize WebAuthn/OPAQUE payloads. Expected outcome: returns server challenge objects and final confirmations.
+src/lib/storage.ts — client persistent storage API. Purpose: open IndexedDB, encrypt/decrypt key bundles (using WebCrypto), and provide put/get/delete helpers. Expected outcome: reliable local storage of encrypted key material and message cache.
+Server stubs (not shown) — endpoints such as /api/auth/webauthn/register/begin and /api/auth/webauthn/register/complete. Purpose: provide challenge, validate attestation/assertion, store public credential / verifier and encrypted prekeys. Expected outcome: server confirms registration and responds with mailbox/prekey pointers.
+IndexedDB terminology (simple, practical)
+Database: the top-level storage container (e.g., cipher-chat). It contains one or more object stores.
+Object store: like a table or key/value bucket inside the DB (e.g., blobs). Stores records keyed by a key (string or number).
+Key: the identifier used to retrieve a record (e.g., keybundle:you@example.com).
+Value / Record: the stored data for a key. In this project the value is an encrypted bundle object (salt, iv, ciphertext) — often referred to informally as a "blob".
+Blob (in this context): binary or opaque data; here it means the encrypted key bundle (not to confuse with server-side blobs). IndexedDB can store JS objects, ArrayBuffer, Blob types.
+Transaction: a unit of work for reads/writes in IndexedDB. Use read-only or read-write transactions.
+Cursor: an iterator to walk records in an object store.
+Index: an auxiliary lookup inside an object store for faster queries (based on another property/keyPath).
+Version and upgrade: the DB has a numeric version; schema changes (new object stores) happen in an upgrade callback when opening with a higher version.
+What is actually written for registration (expected shape)
+Key: keybundle:you@example.com
+Value: an object like { salt: [...], iv: [...], ciphertext: [...] } — this is the encrypted bundle. The client decrypts it locally with the backup passphrase or device key.
+Server stores: public credential id / OPAQUE verifier and encrypted prekey(s) — not private key material.
+
+form inputs use id attributes but component state email/password are not wired to those inputs (TODO: wire controlled inputs or read values on submit). Server interaction is assumed to return ready-to-use WebAuthn options.)
+
+Known issues / TODOs (summary)
+Input elements in Signup.tsx are not wired to component state — registration/login handlers currently read nothing from those inputs. Fix: use controlled inputs or query DOM on submit.
+Backend endpoints must be running and return proper JSON for WebAuthn; the dev server returning index.html for /api/... indicates proxy/server misconfiguration. Resolve server or CRA proxy before relying on server-side registration.
+Build tooling: install postcss and loader/presets and add postcss.config.js to resolve CSS loader errors.
+Quick-checks: ensure runVerification(...) is invoked after app bundle is loaded (call from console) and uses correct email/passphrase.
+
+Tech stack (minimal)
+Node.js + Express (TypeScript optional)
+fido2-lib (or equivalent) for WebAuthn server logic
+Small persistent store: SQLite / lowdb / JSON file for dev (Postgres for production)
+Optionally cors for direct frontend requests (not required if CRA proxy is used)
+body-parser / built-in express JSON parsing

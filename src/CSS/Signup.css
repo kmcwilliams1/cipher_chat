@@ -1,0 +1,199 @@
+:root {
+    --bg: #f8f9fa;
+    --card-bg: #fff;
+    --muted: #6c757d;
+    --accent: #0d6efd;
+    --border: #e9ecef;
+}
+
+/* Base layout */
+.home-container {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 48px 16px;
+    min-height: 60vh;
+    background: var(--bg);
+    font-family: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial;
+    color: #222;
+    position: relative;
+}
+
+/* Card used for both login and register */
+.auth-card {
+    width: 420px;
+    max-width: 95%;
+    background: var(--card-bg);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 28px;
+    box-shadow: 0 6px 18px rgba(0, 0, 0, 0.04);
+    position: relative;
+    z-index: 2;
+}
+
+/* Larger register card */
+.auth-card.register {
+    max-width: 600px;
+    padding: 32px;
+}
+
+/* Background image + overlay for register */
+.bg-image {
+    background-size: cover;
+    background-position: center;
+    background-repeat: no-repeat;
+}
+
+/* mask overlay */
+.mask.gradient-custom-3 {
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(180deg, rgba(2, 0, 36, 0.45) 0%, rgba(13, 54, 121, 0.25) 50%, rgba(2, 0, 36, 0.55) 100%);
+    z-index: 1;
+    border-radius: 0;
+}
+
+/* button gradient variant used for register */
+.gradient-custom-4 {
+    background: linear-gradient(90deg, #7b4397, #dc2430);
+    color: #fff;
+    box-shadow: 0 6px 14px rgba(124, 58, 237, 0.15);
+}
+
+/* Reused form styles */
+.auth-title {
+    margin: 0 0 18px;
+    font-size: 1.25rem;
+    text-align: center
+}
+
+.field {
+    display: block;
+    margin-bottom: 12px
+}
+
+.field-label {
+    display: block;
+    font-size: .85rem;
+    margin-bottom: 6px;
+    color: #495057
+}
+
+.input {
+    width: 100%;
+    padding: 10px 12px;
+    border: 1px solid #dee2e6;
+    border-radius: 8px;
+    font-size: .95rem;
+    outline: none;
+    box-sizing: border-box
+}
+
+.input:focus {
+    border-color: var(--accent);
+    box-shadow: 0 0 0 3px rgba(13, 110, 253, 0.08)
+}
+
+.row {
+    display: flex;
+    align-items: center
+}
+
+.between {
+    justify-content: space-between
+}
+
+.small-gap {
+    gap: 8px;
+    margin-bottom: 12px
+}
+
+.center-justify {
+    justify-content: center
+}
+
+.checkbox {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+    font-size: .9rem;
+    color: #495057
+}
+
+.link {
+    color: var(--accent);
+    text-decoration: none;
+    font-size: .9rem
+}
+
+.btn {
+    width: 100%;
+    padding: 10px 12px;
+    border-radius: 8px;
+    border: none;
+    cursor: pointer;
+    font-weight: 600;
+    margin: 8px 0 14px
+}
+
+.btn.primary {
+    background: linear-gradient(90deg, #0d6efd, #0b5ed7);
+    color: #fff;
+    box-shadow: 0 6px 14px rgba(13, 110, 253, 0.18)
+}
+
+.text-center {
+    text-align: center
+}
+
+.muted {
+    color: var(--muted);
+    margin: 4px 0;
+    font-size: .95rem
+}
+
+.social-row {
+    display: flex;
+    gap: 8px;
+    justify-content: center;
+    margin-top: 8px;
+    width: 40%;
+    margin-left: auto;
+    margin-right: auto
+}
+
+.social-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 38px;
+    height: 38px;
+    border-radius: 8px;
+    color: #1266f1;
+    background: transparent;
+    border: 1px solid #e6eefc;
+    text-decoration: none;
+    transition: transform .12s ease, background .12s ease
+}
+
+.social-btn:hover {
+    transform: translateY(-2px);
+    background: rgba(18, 102, 241, 0.05)
+}
+
+/* smaller view tweaks */
+@media (max-width: 520px) {
+    .auth-card {
+        padding: 20px
+    }
+
+    .social-row {
+        width: 60%;
+        gap: 10px
+    }
+
+    .auth-card.register {
+        max-width: 95%
+    }
+}
