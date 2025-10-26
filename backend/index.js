@@ -6,6 +6,45 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
+app.use((req, res, next) => {
+    console.log('[req] %s %s', req.method, req.originalUrl || req.url);
+    next();
+});
+
+app.use((req, res, next) => {
+    // If a client calls /auth/... (missing /api), rewrite it internally to /api/auth/...
+    if (req.path && req.path.startsWith('/auth/')) {
+        const newUrl = '/api' + req.url; // preserve query string and original url
+        console.log('[rewrite] rewrote', req.method, req.url, '->', newUrl);
+        req.url = newUrl;
+    }
+    next();
+});
+
+// after all routers are attached, dump registered routes
+function listRoutes(app) {
+    const routes = [];
+    (app._router && app._router.stack || []).forEach(mw => {
+        if (mw.route) {
+            // direct route
+            const path = mw.route.path;
+            const methods = Object.keys(mw.route.methods).join(',').toUpperCase();
+            routes.push(`${methods} ${path}`);
+        } else if (mw.name === 'router' && mw.handle && mw.handle.stack) {
+            // router mounted with path in regexp; try to get mount path
+            mw.handle.stack.forEach(r => {
+                if (r.route) {
+                    const path = r.route.path;
+                    const methods = Object.keys(r.route.methods).join(',').toUpperCase();
+                    routes.push(`${methods} (router) ${path}`);
+                }
+            });
+        }
+    });
+    console.log('[routes] Registered routes:\n' + routes.join('\n'));
+}
+listRoutes(app)
+
 const PORT = process.env.PORT || 4000;
 
 const fs = require('fs');
@@ -13,22 +52,22 @@ const path = require('path');
 const DATA_FILE = path.join(__dirname, 'data', 'store.json');
 
 function loadStore() {
-  try {
-    const raw = fs.readFileSync(DATA_FILE, 'utf8');
-    return JSON.parse(raw);
-  } catch (e) {
-    return { users: {}, prekeys: {}, challenges: {} };
-  }
+    try {
+        const raw = fs.readFileSync(DATA_FILE, 'utf8');
+        return JSON.parse(raw);
+    } catch (e) {
+        return {users: {}, prekeys: {}, challenges: {}};
+    }
 }
 
 // Call saveStore(store) after mutating the store (register/complete/prekeys handlers)
 function saveStore(s) {
-  try {
-    fs.mkdirSync(path.dirname(DATA_FILE), { recursive: true });
-    fs.writeFileSync(DATA_FILE, JSON.stringify(s, null, 2), 'utf8');
-  } catch (e) {
-    console.error('Failed to save store:', e);
-  }
+    try {
+        fs.mkdirSync(path.dirname(DATA_FILE), {recursive: true});
+        fs.writeFileSync(DATA_FILE, JSON.stringify(s, null, 2), 'utf8');
+    } catch (e) {
+        console.error('Failed to save store:', e);
+    }
 }
 
 const store = loadStore();
@@ -37,32 +76,47 @@ function base64url(buf) {
     return Buffer.from(buf).toString('base64').replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
 }
 
+//---------------------- APIS --------------------------------------//
+
+
+// serve static files from backend/public (optional)
+app.use(express.static(path.join(__dirname, 'public')));
+
+// ensure root returns the index.html message if it exists
+app.get('/', (req, res) => {
+    res.sendFile(path.join(__dirname, 'public', 'index.html'));
+});
+
 // GET /api/auth/user?email=...
 app.get('/api/auth/user', (req, res) => {
     const email = String(req.query.email || '').toLowerCase();
-    if (!email) return res.json({ exists: false });
+    if (!email) return res.json({exists: false});
     const u = store.users[email];
-    if (!u) return res.json({ exists: false });
-    res.json({ exists: true, credentialId: u.credentialId });
+    if (!u) return res.json({exists: false});
+    res.json({exists: true, credentialId: u.credentialId});
 });
 
 // Simple WebAuthn register begin (returns JSON stub with base64 challenge)
 app.post('/api/auth/webauthn/register/begin', (req, res) => {
-    const { username } = req.body || {};
-    if (!username) return res.status(400).json({ error: 'missing username' });
+    const {username} = req.body || {};
+    if (!username) return res.status(400).json({error: 'missing username'});
     const email = String(username).toLowerCase();
     const challenge = crypto.randomBytes(32);
-    store.challenges[email] = { value: base64url(challenge), type: 'webauthn-register', expires: Date.now() + 2 * 60_000 };
+    store.challenges[email] = {
+        value: base64url(challenge),
+        type: 'webauthn-register',
+        expires: Date.now() + 2 * 60_000
+    };
     // Minimal PublicKeyCredentialCreationOptions-like object (client may need to decode)
     const options = {
         challenge: base64url(challenge),
-        rp: { name: 'Cipher Chat' },
+        rp: {name: 'Cipher Chat'},
         user: {
             id: base64url(Buffer.from(email)),
             name: email,
             displayName: email,
         },
-        pubKeyCredParams: [{ alg: -7, type: 'public-key' }],
+        pubKeyCredParams: [{alg: -7, type: 'public-key'}],
         timeout: 60000,
         attestation: 'none'
     };
@@ -74,29 +128,31 @@ app.post('/api/auth/webauthn/register/complete', (req, res) => {
     const payload = req.body || {};
     // For dev: accept and store a generated credentialId if username was present in stored challenge
     // Client should send enough info in a real implementation
-    const { id, rawId, response, type } = payload;
+    const {id, rawId, response, type} = payload;
     // Try to find an associated email via challenges (best-effort)
     const email = Object.keys(store.challenges).find(e => store.challenges[e].value && store.challenges[e].value === (response?.clientDataJSON || store.challenges[e].value));
     // Fallback: allow registration without mapping (dev convenience)
     const credId = id || (rawId ? rawId : base64url(crypto.randomBytes(16)));
     // If no email found, store under a placeholder (client must call /api/auth/user afterwards)
     const target = email || 'unknown@example.com';
-    store.users[target] = { credentialId: credId, publicKey: 'dev-placeholder' };
-    res.json({ ok: true, credentialId: credId });
+    store.users[target] = {credentialId: credId, publicKey: 'dev-placeholder'};
+    // persist immediately
+    saveStore(store);
+    res.json({ok: true, credentialId: credId});
 });
 
 // WebAuthn login begin stub
 app.post('/api/auth/webauthn/login/begin', (req, res) => {
-    const { username } = req.body || {};
-    if (!username) return res.status(400).json({ error: 'missing username' });
+    const {username} = req.body || {};
+    if (!username) return res.status(400).json({error: 'missing username'});
     const email = String(username).toLowerCase();
     const challenge = crypto.randomBytes(32);
-    store.challenges[email] = { value: base64url(challenge), type: 'webauthn-login', expires: Date.now() + 2 * 60_000 };
+    store.challenges[email] = {value: base64url(challenge), type: 'webauthn-login', expires: Date.now() + 2 * 60_000};
     const user = store.users[email];
     const options = {
         challenge: base64url(challenge),
         timeout: 60000,
-        allowCredentials: user && user.credentialId ? [{ id: user.credentialId, type: 'public-key' }] : [],
+        allowCredentials: user && user.credentialId ? [{id: user.credentialId, type: 'public-key'}] : [],
         userVerification: 'preferred'
     };
     res.json(options);
@@ -109,11 +165,11 @@ app.post('/api/auth/webauthn/login/complete', (req, res) => {
     // find email by credentialId
     const email = Object.keys(store.users).find(e => store.users[e].credentialId === payload.id) || null;
     if (!email) {
-        return res.status(400).json({ ok: false, error: 'unknown-credential' });
+        return res.status(400).json({ok: false, error: 'unknown-credential'});
     }
     // successful auth: respond with session token (dev-only)
     const sessionToken = base64url(crypto.randomBytes(24));
-    res.json({ ok: true, sessionToken });
+    res.json({ok: true, sessionToken});
 });
 
 // GET /api/prekeys/:email
@@ -125,10 +181,12 @@ app.get('/api/prekeys/:email', (req, res) => {
 
 // POST /api/prekeys/upload
 app.post('/api/prekeys/upload', (req, res) => {
-    const { email, prekeys } = req.body || {};
-    if (!email || !Array.isArray(prekeys)) return res.status(400).json({ error: 'missing email or prekeys' });
+    const {email, prekeys} = req.body || {};
+    if (!email || !Array.isArray(prekeys)) return res.status(400).json({error: 'missing email or prekeys'});
     const e = String(email).toLowerCase();
     store.prekeys[e] = store.prekeys[e] ? store.prekeys[e].concat(prekeys) : prekeys.slice();
+    // persist immediately
+    saveStore(store);
     res.json({ ok: true, count: store.prekeys[e].length });
 });
 

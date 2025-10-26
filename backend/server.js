@@ -1,4 +1,3 @@
-// javascript (file: `backend/server.js`)
 const express = require('express');
 const path = require('path');
 const app = express();
@@ -8,8 +7,13 @@ const app = express();
 app.use((req, res, next) => {
     res.setHeader(
         'Content-Security-Policy',
-        "default-src 'self'; script-src 'self' 'unsafe-inline' https:; img-src 'self' data:;"
+        "default-src 'self'; script-src 'self' https:; img-src 'self' data:;"
     );
+    next();
+});
+
+app.use((req, res, next) => {
+    console.log('[server.js] incoming:', req.method, req.url);
     next();
 });
 

@@ -183,14 +183,32 @@ pushes changes to remote repository
 Then, go to GitHub and create a pull request. Merges require approval from at least one other team member. If there are
 merge conflicts, resolve them locally before pushing again. If not, the pull request can be merged.
 
+### `npm i`
+
+installs all dependencies
+
 ### `npm build`
 
 updates dependencies
 
 ### `npm start`
 
-Runs the app in the development mode.\
+Runs the app in the development mode.
+
+### `cd backend && npm i`
+
+installs all backend dependencies
+
+### `npm start`
+
+Runs the backend server.
+
+
+---------------------------
+
 Open [http://localhost:3000](http://localhost:3000) to view it in the browser.
+Open [http://localhost:4000](http://localhost:4000) to view if backend is properly working.
+
 
 The page will reload if you make edits.\
 You will also see any lint errors in the console.
