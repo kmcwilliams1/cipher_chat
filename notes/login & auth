@@ -60,7 +60,7 @@ Quick plan (first milestones)
 Add deps: idb, tweetnacl (or libsodium-wrappers), axios or use fetch, optionally libp2p later.
 Implement local secure storage (encrypted bundles, messages) using IndexedDB.
 Implement auth client wrappers for WebAuthn + PAKE/OPAQUE placeholders and server endpoints.
-Wire LoginSignup to controlled inputs and call the auth service; persist encrypted keys locally.
+Wire Signup to controlled inputs and call the auth service; persist encrypted keys locally.
 Add server stubs: /api/auth/webauthn/register/begin, /api/auth/webauthn/register/complete, /api/auth/opaque/*, /api/prekeys/upload.
 
 Next steps after bootstrapping
@@ -70,13 +70,13 @@ Add OPAQUE/PAKE server and private contact discovery (PSI) for metadata minimiza
 Add federation/p2p layer when Phase 2 ready.
 
 High-level flow (user action → storage → server)
-User interacts with UI in src/pages/LoginSignup.tsx. The component collects email/password (or starts WebAuthn flows) and calls the auth layer.
+User interacts with UI in src/pages/Signup.tsx. The component collects email/password (or starts WebAuthn flows) and calls the auth layer.
 src/services/auth.ts implements client-side auth flows (WebAuthn placeholders, OPAQUE placeholders, calls to server endpoints). It handles challenge exchange and prepares credential/assertion data.
 After successful registration/login, the client builds a local key bundle (private keys, prekeys, metadata), encrypts it with a passphrase or device-bound secret, and writes the encrypted blob into IndexedDB via src/lib/storage.ts.
 The server endpoints (stubs) receive WebAuthn/OPAQUE exchanges and store only verifiers/public credentials and encrypted prekeys. Servers never receive plaintext private keys.
 Expected developer outcome: registration shows success in UI; IndexedDB contains keybundle:<email>; server has a public credential record and at least one uploaded prekey.
 Purpose of key files
-src/pages/LoginSignup.tsx — UI layer. Purpose: collect input, start register/login flows, show status messages. Expected outcome: triggers auth flows and local persistence steps.
+src/pages/Signup.tsx — UI layer. Purpose: collect input, start register/login flows, show status messages. Expected outcome: triggers auth flows and local persistence steps.
 src/services/auth.ts — integration layer. Purpose: call server endpoints, prepare and normalize WebAuthn/OPAQUE payloads. Expected outcome: returns server challenge objects and final confirmations.
 src/lib/storage.ts — client persistent storage API. Purpose: open IndexedDB, encrypt/decrypt key bundles (using WebCrypto), and provide put/get/delete helpers. Expected outcome: reliable local storage of encrypted key material and message cache.
 Server stubs (not shown) — endpoints such as /api/auth/webauthn/register/begin and /api/auth/webauthn/register/complete. Purpose: provide challenge, validate attestation/assertion, store public credential / verifier and encrypted prekeys. Expected outcome: server confirms registration and responds with mailbox/prekey pointers.
@@ -94,3 +94,18 @@ What is actually written for registration (expected shape)
 Key: keybundle:you@example.com
 Value: an object like { salt: [...], iv: [...], ciphertext: [...] } — this is the encrypted bundle. The client decrypts it locally with the backup passphrase or device key.
 Server stores: public credential id / OPAQUE verifier and encrypted prekey(s) — not private key material.
+
+form inputs use id attributes but component state email/password are not wired to those inputs (TODO: wire controlled inputs or read values on submit). Server interaction is assumed to return ready-to-use WebAuthn options.)
+
+Known issues / TODOs (summary)
+Input elements in Signup.tsx are not wired to component state — registration/login handlers currently read nothing from those inputs. Fix: use controlled inputs or query DOM on submit.
+Backend endpoints must be running and return proper JSON for WebAuthn; the dev server returning index.html for /api/... indicates proxy/server misconfiguration. Resolve server or CRA proxy before relying on server-side registration.
+Build tooling: install postcss and loader/presets and add postcss.config.js to resolve CSS loader errors.
+Quick-checks: ensure runVerification(...) is invoked after app bundle is loaded (call from console) and uses correct email/passphrase.
+
+Tech stack (minimal)
+Node.js + Express (TypeScript optional)
+fido2-lib (or equivalent) for WebAuthn server logic
+Small persistent store: SQLite / lowdb / JSON file for dev (Postgres for production)
+Optionally cors for direct frontend requests (not required if CRA proxy is used)
+body-parser / built-in express JSON parsing

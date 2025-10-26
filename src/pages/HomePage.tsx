@@ -16,7 +16,8 @@ const HomePage: React.FC = () => {
                 <h1>Welcome to Cipher Chat</h1>
                 <p>Your secure and private messaging platform.</p>
                 <div className="button-group">
-                    <button className="btn primary" onClick={() => navigate('/loginsignup')}>Get Started</button>
+                    <button className="btn primary" onClick={() => navigate('/signup')}>Get Started</button>
+                    <button className="btn secondary" onClick={() => navigate('/login')}>Already Have an Account?</button>
                     <button className="btn outline"
                             onClick={() => alert('About Cipher Chat: Our mission is to provide a secure and private messaging experience for everyone.')}>About
                         Us
