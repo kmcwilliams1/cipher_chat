@@ -97,11 +97,6 @@ Server stores: public credential id / OPAQUE verifier and encrypted prekey(s) �
 
 form inputs use id attributes but component state email/password are not wired to those inputs (TODO: wire controlled inputs or read values on submit). Server interaction is assumed to return ready-to-use WebAuthn options.)
 
-Known issues / TODOs (summary)
-Input elements in Signup.tsx are not wired to component state — registration/login handlers currently read nothing from those inputs. Fix: use controlled inputs or query DOM on submit.
-Backend endpoints must be running and return proper JSON for WebAuthn; the dev server returning index.html for /api/... indicates proxy/server misconfiguration. Resolve server or CRA proxy before relying on server-side registration.
-Build tooling: install postcss and loader/presets and add postcss.config.js to resolve CSS loader errors.
-Quick-checks: ensure runVerification(...) is invoked after app bundle is loaded (call from console) and uses correct email/passphrase.
 
 Tech stack (minimal)
 Node.js + Express (TypeScript optional)
@@ -109,3 +104,37 @@ fido2-lib (or equivalent) for WebAuthn server logic
 Small persistent store: SQLite / lowdb / JSON file for dev (Postgres for production)
 Optionally cors for direct frontend requests (not required if CRA proxy is used)
 body-parser / built-in express JSON parsing
+
+
+Implemented
+src/services/auth.ts — WebAuthn begin/finish flows, robust base64url <-> ArrayBuffer helpers and payload conversion.
+src/pages/Signup.tsx — client registration UI, challenge normalization, calls beginWebAuthnRegister and finishWebAuthnRegister.
+src/pages/Login.tsx — client login UI, calls beginWebAuthnLogin / finishWebAuthnLogin, useNavigate redirect on success.
+src/lib/storage.ts — IndexedDB wrapper + PBKDF2/AES-GCM encrypt/decrypt helpers.
+src/services/quick-checks.ts — local/server verification helpers and test bundle code.
+src/setupProxy.js — dev proxy /api → http://localhost:4000.
+backend/index.js — request logging and a rewrite middleware to accept /auth/... → /api/auth/... (dev convenience).
+backend/data/store.json — sample user, challenge and prekey placeholders.
+backend/server.js — lightweight static server for backend/public.
+
+
+Remaining / recommended work
+Server-side validation: implement full attestation/assertion verification (e.g., fido2-lib) and proper /api/auth/webauthn/* handlers (store/validate public keys, verify challenge expiry). Right now only stubs/sample data exist.
+Persist local keybundle on successful registration: Signup.tsx imports encryptBlob/putBlob but does not save the encrypted keybundle yet — add that after registration completes.
+Fix small client issues:
+Signup.tsx imports Link from react-router — should be react-router-dom.
+No client-side redirect after successful signup (add useNavigate like Login).
+Remove the rewrite hack in backend/index.js or make route paths consistent: ensure frontend always requests /api/... (proxy) and backend exposes /api handlers; prefer fixing client/proxy rather than rewriting paths in runtime.
+Complete route listing / server startup code (the listRoutes function in backend/index.js is truncated).
+Add error handling / UX for WebAuthn user-deny cases and clearer status messages; add unit/integration tests for auth flows.
+OPAQUE/PAKE placeholders and prekey upload/rotation are still TODO per design notes.
+
+
+Quick checklist
+Client WebAuthn flows: implemented ✅
+Client ArrayBuffer/base64 handling: implemented ✅
+Client local storage crypto: implemented ✅
+Dev proxy /api → backend: implemented ✅
+Backend WebAuthn verification & persistent API: incomplete / needs implementation ❗
+Persist local keybundle on register: not yet done ❗
+Minor client fixes (Link import, signup redirect): need fix ❗

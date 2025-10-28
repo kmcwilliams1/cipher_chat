@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { beginWebAuthnLogin, finishWebAuthnLogin } from '../services/auth';
 import '../CSS/Signup.css';
-import {Link} from "react-router";
+import { Link, useNavigate } from 'react-router-dom';
 
 const SocialButton: React.FC<{ label: string; href?: string; children: React.ReactNode }> = ({ label, href = '#', children }) => (
     <a className="social-btn" href={href} aria-label={label} onClick={(e) => e.preventDefault()}>
@@ -13,16 +13,19 @@ const Login: React.FC = () => {
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
     const [status, setStatus] = useState<string | null>(null);
+    const navigate = useNavigate();
 
     async function handleLogin(e: React.FormEvent) {
         e.preventDefault();
         try {
             setStatus('starting WebAuthn login...');
             const options = await beginWebAuthnLogin(email);
-            const cred = (await navigator.credentials.get({ publicKey: options })) as PublicKeyCredential;
+            const cred = (await navigator.credentials.get({ publicKey: options })) as PublicKeyCredential | null;
+            if (!cred) throw new Error('no credential returned');
             await finishWebAuthnLogin(cred);
             setStatus('login successful');
-            // fetch/decrypt keybundle next
+            // redirect to homepage (replace to avoid back to login)
+            navigate('/home', { replace: true });
         } catch (err: any) {
             setStatus('login error: ' + (err?.message || String(err)));
         }
