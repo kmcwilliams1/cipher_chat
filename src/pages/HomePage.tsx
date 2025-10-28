@@ -1,33 +1,84 @@
-import {useNavigate} from 'react-router-dom';
-import React, {useState} from 'react';
+import React, { useState } from 'react';
+import ChatSidebar from '../components/ChatSidebar';
+import ChatWindow from '../components/ChatWindow';
 import '../CSS/HomePage.css';
 
+export type Message = {
+  id: string;
+  from: string;
+  text: string;
+  ts: number;
+  me?: boolean;
+};
 
+export type Chat = {
+  id: string;
+  title: string;
+  snippet?: string;
+  unread?: number;
+  messages: Message[];
+};
+
+const sampleChats: Chat[] = [
+  {
+    id: 'c1',
+    title: 'Alice',
+    snippet: 'See you tomorrow!',
+    unread: 2,
+    messages: [
+      { id: 'm1', from: 'Alice', text: 'Hey — are we still on for tomorrow?', ts: Date.now() - 1000 * 60 * 60 },
+      { id: 'm2', from: 'me', text: "Yes — 10am works", ts: Date.now() - 1000 * 60 * 30, me: true },
+    ],
+  },
+  {
+    id: 'c2',
+    title: 'Work Group',
+    snippet: 'Docs updated',
+    messages: [
+      { id: 'm3', from: 'Sam', text: 'I pushed the latest draft.', ts: Date.now() - 1000 * 60 * 60 * 5 },
+    ],
+  },
+];
 
 const HomePage: React.FC = () => {
-    const navigate = useNavigate();
-    const [showRegister, setShowRegister] = useState(false);
+  const [chats, setChats] = useState<Chat[]>(sampleChats);
+  const [selectedChatId, setSelectedChatId] = useState<string>(sampleChats[0].id);
 
-    return (
-        <div className={`home-container ${showRegister ? 'bg-image' : ''}`}
-             style={showRegister ? {backgroundImage: "url('https://mdbcdn.b-cdn.net/img/Photos/new-templates/search-box/img4.webp')"} : {}}>
-            {showRegister && <div className="mask gradient-custom-3"/>}
-            <div className="home-content">
-                <h1>Welcome to Cipher Chat</h1>
-                <p>Your secure and private messaging platform.</p>
-                <div className="button-group">
-                    <button className="btn primary" onClick={() => navigate('/signup')}>Get Started</button>
-                    <button className="btn secondary" onClick={() => navigate('/login')}>Already Have an Account?</button>
-                    <button className="btn outline"
-                            onClick={() => alert('About Cipher Chat: Our mission is to provide a secure and private messaging experience for everyone.')}>About
-                        Us
-                    </button>
-                </div>
-            </div>
-        </div>
+  const selectedChat = chats.find((c) => c.id === selectedChatId) || chats[0];
+
+  function sendMessage(chatId: string, text: string) {
+    if (!text.trim()) return;
+    const msg: Message = {
+      id: 'm' + Math.random().toString(36).slice(2, 9),
+      from: 'me',
+      text,
+      ts: Date.now(),
+      me: true,
+    };
+    setChats((prev) =>
+      prev.map((c) => (c.id === chatId ? { ...c, messages: [...c.messages, msg], snippet: text } : c))
     );
+  }
 
+  return (
+    <div className="cc-homepage">
+      <aside className="cc-sidebar">
+        <ChatSidebar
+          chats={chats}
+          selectedId={selectedChatId}
+          onSelect={(id) => setSelectedChatId(id)}
+        />
+      </aside>
 
-}
+      <main className="cc-main">
+        {selectedChat ? (
+          <ChatWindow chat={selectedChat} onSend={(text) => sendMessage(selectedChat.id, text)} />
+        ) : (
+          <div className="cc-empty">Select a chat to start messaging</div>
+        )}
+      </main>
+    </div>
+  );
+};
 
 export default HomePage;
