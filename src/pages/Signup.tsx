@@ -13,6 +13,10 @@ const Signup: React.FC = () => {
     const [agree, setAgree] = useState(false);
     const [status, setStatus] = useState<string | null>(null);
 
+    //variable function to handle the hide feature function
+    const [Hide_Password_1, setHide_Password] = useState(false)
+    const [Hide_Password_2, setHide_Password_2] = useState(false)
+
 // inside component
     async function handleRegister(e: React.FormEvent) {
         e.preventDefault();
@@ -98,15 +102,25 @@ const Signup: React.FC = () => {
 
                 <label className="field">
                     <span className="field-label">Password</span>
-                    <input className="input" type="password" id="passwordReg" placeholder="••••••••" required
+                    <input className="input" type={Hide_Password_1 ? 'text' : 'password'} id="passwordReg" placeholder="••••••••" required
                            value={password} onChange={(e) => setPassword(e.target.value)}/>
                 </label>
 
+                {/* Toggle button to show or hide password */}
+                <button type="button" className="btn" onClick={() => setHide_Password((prev) => !prev)}>
+                    {Hide_Password_1 ? 'Hide' : 'Show'} password
+                </button>
+
                 <label className="field">
                     <span className="field-label">Repeat your password</span>
-                    <input className="input" type="password" id="passwordRepeat" placeholder="••••••••" required
+                    <input className="input" type={Hide_Password_2 ? 'text' : 'password'} id="passwordRepeat" placeholder="••••••••" required
                            value={passwordRepeat} onChange={(e) => setPasswordRepeat(e.target.value)}/>
                 </label>
+
+                {/* Toggle button to show or hide password */}
+                <button type="button" className="btn" onClick={() => setHide_Password((prev) => !prev)}>
+                    {Hide_Password_2 ? 'Hide' : 'Show'} password
+                </button>
 
                 <div className="row between small-gap center-justify">
                     <label className="checkbox">
