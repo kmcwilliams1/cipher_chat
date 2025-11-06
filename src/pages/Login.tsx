@@ -15,6 +15,10 @@ const Login: React.FC = () => {
     const [status, setStatus] = useState<string | null>(null);
     const navigate = useNavigate();
 
+
+    //variable function to handle the hide feature function
+    const [Hide_Password, setHide_Password] = useState(false)
+  
     async function handleLogin(e: React.FormEvent) {
         e.preventDefault();
         try {
@@ -43,8 +47,13 @@ const Login: React.FC = () => {
 
                 <label className="field">
                     <span className="field-label">Password</span>
-                    <input className="input" type="password" id="password" placeholder="••••••••" required value={password} onChange={(e) => setPassword(e.target.value)} />
+                    <input className="input" type={Hide_Password ? 'text' : 'password'} id="password" placeholder="••••••••" required value={password} onChange={(e) => setPassword(e.target.value)} />
                 </label>
+
+                {/* Toggle button to show or hide password */}
+                <button type="button" className="btn" onClick={() => setHide_Password((prev) => !prev)}>
+                    {Hide_Password ? 'Hide' : 'Show'} password
+                </button>
 
                 <div className="row between small-gap">
                     <label className="checkbox">
