@@ -3,7 +3,7 @@ import {beginWebAuthnRegister, finishWebAuthnRegister, base64ToArrayBuffer} from
 import {putBlob, encryptBlob} from '../lib/storage';
 import '../CSS/Signup.css';
 import {Link} from "react-router";
-
+import { EyeInvisibleOutlined, EyeOutlined } from '@ant-design/icons'; //Import eye toggle
 
 const Signup: React.FC = () => {
     const [name, setName] = useState('');
@@ -102,25 +102,34 @@ const Signup: React.FC = () => {
 
                 <label className="field">
                     <span className="field-label">Password</span>
-                    <input className="input" type={Hide_Password_1 ? 'text' : 'password'} id="passwordReg" placeholder="••••••••" required
-                           value={password} onChange={(e) => setPassword(e.target.value)}/>
-                </label>
+                    <div style= {{ position: 'relative' }}>
+                        <input className="input" type={Hide_Password_1 ? 'text' : 'password'} id="passwordReg" placeholder="••••••••" required
+                           value={password} onChange={(e) => setPassword(e.target.value)} style={{ paddingRight: '40px' }}
+                        />
 
-                {/* Toggle button to show or hide password */}
-                <button type="button" className="btn" onClick={() => setHide_Password((prev) => !prev)}>
-                    {Hide_Password_1 ? 'Hide' : 'Show'} password
-                </button>
+                {/* Toggle button to show or hide password 1*/}
+                        <button type="button" onClick={() => setHide_Password((prev) => !prev)} style={{ background: 'transparent', border: 'none', cursor: 'pointer', position: 'absolute', right: '10px', top: '50%', transform: 'translateY(-50%)', padding: 0 }} 
+                            aria-label={Hide_Password_1 ? 'Hide password' : 'Show password'}>
+                            {Hide_Password_1 ? <EyeOutlined style={{ fontSize: 20 }}/> : <EyeInvisibleOutlined style={{ fontSize: 20 }}/> }
+                        </button> 
+                    </div>
+                </label>
 
                 <label className="field">
                     <span className="field-label">Repeat your password</span>
-                    <input className="input" type={Hide_Password_2 ? 'text' : 'password'} id="passwordRepeat" placeholder="••••••••" required
-                           value={passwordRepeat} onChange={(e) => setPasswordRepeat(e.target.value)}/>
-                </label>
+                    <div style= {{ position: 'relative' }}>
+                        <input className="input" type={Hide_Password_2 ? 'text' : 'password'} id="passwordRepeat" placeholder="••••••••" required
+                            value={passwordRepeat} onChange={(e) => setPasswordRepeat(e.target.value)} style={{ paddingRight: '40px' }}
+                        />
 
-                {/* Toggle button to show or hide password */}
-                <button type="button" className="btn" onClick={() => setHide_Password((prev) => !prev)}>
-                    {Hide_Password_2 ? 'Hide' : 'Show'} password
-                </button>
+
+                {/* Toggle button to show or hide password 2*/}
+                        <button type="button" onClick={() => setHide_Password_2((prev) => !prev)} style={{ background: 'transparent', border: 'none', cursor: 'pointer', position: 'absolute', right: '10px', top: '50%', transform: 'translateY(-50%)', padding: 0 }} 
+                            aria-label={Hide_Password_2 ? 'Hide password' : 'Show password'}>
+                            {Hide_Password_2 ? <EyeOutlined style={{ fontSize: 20 }}/> : <EyeInvisibleOutlined style={{ fontSize: 20 }}/> }
+                        </button>
+                    </div>
+                </label>
 
                 <div className="row between small-gap center-justify">
                     <label className="checkbox">
