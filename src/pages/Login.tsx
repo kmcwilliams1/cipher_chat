@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { beginWebAuthnLogin, finishWebAuthnLogin } from '../services/auth';
 import '../CSS/Signup.css';
 import { Link, useNavigate } from 'react-router-dom';
+import { EyeInvisibleOutlined, EyeOutlined } from '@ant-design/icons'; //Import eye toggle
 
 const SocialButton: React.FC<{ label: string; href?: string; children: React.ReactNode }> = ({ label, href = '#', children }) => (
     <a className="social-btn" href={href} aria-label={label} onClick={(e) => e.preventDefault()}>
@@ -15,6 +16,10 @@ const Login: React.FC = () => {
     const [status, setStatus] = useState<string | null>(null);
     const navigate = useNavigate();
 
+
+    //variable function to handle the hide feature function
+    const [Hide_Password, setHide_Password] = useState(false)
+  
     async function handleLogin(e: React.FormEvent) {
         e.preventDefault();
         try {
@@ -43,7 +48,15 @@ const Login: React.FC = () => {
 
                 <label className="field">
                     <span className="field-label">Password</span>
-                    <input className="input" type="password" id="password" placeholder="••••••••" required value={password} onChange={(e) => setPassword(e.target.value)} />
+                    <div style = {{ position : 'relative' }}>
+                        <input className="input" type={Hide_Password ? 'text' : 'password'} id="password" placeholder="••••••••" required value={password} onChange={(e) => setPassword(e.target.value)} style={{ paddingRight: '40px' }} />
+                    
+
+                {/* Toggle button to show or hide password */}
+                        <button type="button" onClick={() => setHide_Password((prev) => !prev)} style={{ background: 'transparent', border: 'none', cursor: 'pointer', position: 'absolute', right: '10px', top: '50%', transform: 'translateY(-50%)', padding: 0 }} aria-label={Hide_Password ? 'Hide password' : 'Show password'}>
+                            {Hide_Password ? <EyeOutlined style={{ fontSize: 20 }} /> : <EyeInvisibleOutlined style={{ fontSize: 20 }} />}
+                        </button>
+                    </div>
                 </label>
 
                 <div className="row between small-gap">
