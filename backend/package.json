@@ -17,9 +17,12 @@
   "license": "ISC",
   "dependencies": {
     "cors": "^2.8.5",
+    "dotenv": "^17.2.3",
     "express": "^5.1.0",
     "fido2-lib": "^3.5.3",
     "lowdb": "^7.0.1",
+    "mongoose": "^8.20.0",
+    "nodemailer": "^7.0.10",
     "sqlite3": "^5.1.7"
   }
 }
